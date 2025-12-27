@@ -1,0 +1,11 @@
+---
+title: "Storm Analysis Report"
+author: "NgWM"
+date: "2025-12-26"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+

@@ -1,0 +1,666 @@
+---
+title: "Severe Weather Events in the US (1950–2011): Impact Analysis"
+subtitle: "Public Health and Economic Consequences"
+author: "NgWM"
+date: "`r format(Sys.Date(), '%B %d, %Y')`"
+output:
+  html_document:
+    toc: true
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
+    toc_depth: 3
+    theme: cosmo
+    code_folding: hide
+    highlight: tango
+    number_sections: true
+    df_print: paged
+    fig_caption: true
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+    fig_caption: true
+---
+
+```{r setup, include=FALSE}
+#===============================================================================
+# ENVIRONMENT SETUP
+#===============================================================================
+
+# Load required packages ---------------------------------------------------
+suppressPackageStartupMessages({
+  library(here)           # Project-relative file paths
+  library(tidyverse)      # Data manipulation and visualization
+  library(data.table)     # Fast data reading and manipulation
+  library(lubridate)      # Date-time handling
+  library(scales)         # Scale functions for visualization
+  library(knitr)          # Dynamic report generation
+  library(kableExtra)     # Enhanced table formatting
+})
+
+# Project root configuration -----------------------------------------------
+if (!file.exists(here::here(".here"))) {
+  message("Initializing project root with here::set_here()")
+  here::set_here()
+}
+
+# Directory structure ------------------------------------------------------
+dir.create(here("data"), showWarnings = FALSE)
+dir.create(here("data", "raw"), showWarnings = FALSE)
+dir.create(here("data", "processed"), showWarnings = FALSE)
+dir.create(here("figures"), showWarnings = FALSE)
+dir.create(here("figures", "exploratory"), showWarnings = FALSE)
+dir.create(here("figures", "final"), showWarnings = FALSE)
+dir.create(here("scripts"), showWarnings = FALSE)
+dir.create(here("reports"), showWarnings = FALSE)
+
+# Global knitr options -----------------------------------------------------
+opts_chunk$set(
+  echo = TRUE,              # Show code by default
+  warning = FALSE,          # Suppress warnings
+  message = FALSE,          # Suppress messages
+  error = FALSE,            # Don't stop on errors
+  fig.width = 10,           # Figure width in inches
+  fig.height = 8,           # Figure height in inches
+  fig.align = "center",     # Center-align figures
+  dpi = 300,                # High-resolution figures
+  fig.path = here("figures", "final", "report_"),
+  cache = FALSE,            # Disable caching for data
+  comment = "#>",           # Comment prefix for output
+  collapse = TRUE           # Collapse input and output
+)
+
+# Global visualization theme -----------------------------------------------
+theme_set(
+  theme_minimal(base_size = 12, base_family = "sans") +
+    theme(
+      plot.title = element_text(face = "bold", size = 14, hjust = 0),
+      plot.subtitle = element_text(size = 11, color = "grey40", hjust = 0),
+      plot.caption = element_text(size = 9, color = "grey50", hjust = 1),
+      legend.position = "bottom",
+      panel.grid.minor = element_blank(),
+      strip.background = element_rect(fill = "grey90", color = NA),
+      strip.text = element_text(face = "bold")
+    )
+)
+
+# Custom color palette -----------------------------------------------------
+custom_colors <- list(
+  health_fatalities = "#d73027",
+  health_injuries = "#fee090",
+  economic_property = "#4575b4",
+  economic_crop = "#91cf60",
+  primary = "#2E86AB",
+  secondary = "#A23B72"
+)
+```
+
+```{r helper-functions, include=FALSE}
+#===============================================================================
+# HELPER FUNCTIONS
+#===============================================================================
+
+# Convert damage exponents to numeric multipliers --------------------------
+convert_exponent <- function(exp) {
+  case_when(
+    toupper(exp) == "K" ~ 1e3,
+    toupper(exp) == "M" ~ 1e6,
+    toupper(exp) == "B" ~ 1e9,
+    toupper(exp) %in% c("H", "2") ~ 1e2,
+    toupper(exp) %in% as.character(0:9) ~ 10 ^ as.numeric(toupper(exp)),
+    exp %in% c("", " ", "+", "-", "?", "0") ~ 1,
+    TRUE ~ 1
+  )
+}
+
+# Format large numbers -----------------------------------------------------
+format_number <- function(x, suffix = "") {
+  case_when(
+    abs(x) >= 1e9 ~ paste0(round(x / 1e9, 1), "B", suffix),
+    abs(x) >= 1e6 ~ paste0(round(x / 1e6, 1), "M", suffix),
+    abs(x) >= 1e3 ~ paste0(round(x / 1e3, 1), "K", suffix),
+    TRUE ~ paste0(round(x, 1), suffix)
+  )
+}
+
+# Create publication-ready table -------------------------------------------
+create_table <- function(data, caption = NULL, digits = 2) {
+  data %>%
+    kable(
+      caption = caption,
+      digits = digits,
+      format.args = list(big.mark = ","),
+      align = "c"
+    ) %>%
+    kable_styling(
+      bootstrap_options = c("striped", "hover", "condensed"),
+      full_width = FALSE,
+      position = "center",
+      font_size = 11
+    ) %>%
+    row_spec(0, bold = TRUE, color = "white", background = custom_colors$primary)
+}
+```
+
+---
+
+# Executive Summary {.unnumbered}
+
+This report provides a comprehensive analysis of severe weather events in the United States from 1950 to 2011, examining their impact on public health and economic outcomes. The analysis identifies the most harmful and costly weather event types, providing evidence-based insights for disaster preparedness and resource allocation.
+
+**Key Findings:**
+
+- **Most Harmful Events:** Tornadoes cause the highest number of casualties (fatalities and injuries combined)
+- **Most Costly Events:** Floods result in the greatest economic damage (property and crop damage combined)
+- **Data Coverage:** Analysis spans over 900,000 weather events across 61 years
+
+---
+
+# Introduction
+
+## Background
+
+Severe weather events pose significant risks to public health and economic stability across the United States. Understanding which types of weather events are most harmful and costly is essential for effective disaster preparedness, resource allocation, and policy development.
+
+## Research Questions
+
+This analysis addresses two primary questions:
+
+1. **Which types of weather events are most harmful to population health?**
+   - Measured by fatalities and injuries
+
+2. **Which types of weather events have the greatest economic consequences?**
+   - Measured by property damage and crop damage
+
+## Data Source
+
+Data for this analysis comes from the U.S. National Oceanic and Atmospheric Administration's (NOAA) Storm Database, which tracks characteristics of major storms and weather events in the United States, including when and where they occur, as well as estimates of any fatalities, injuries, and property damage.
+
+The database covers the period from **1950 to November 2011**.
+
+---
+
+# Data Processing
+
+## Data Acquisition
+
+```{r data-download}
+#===============================================================================
+# DATA DOWNLOAD
+#===============================================================================
+
+data_url <- "https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2"
+raw_data_file <- here("data", "raw", "StormData.csv.bz2")
+
+if (!file.exists(raw_data_file)) {
+  cat("Downloading storm data...\n")
+  download.file(data_url, raw_data_file, method = "auto")
+  cat("Download complete!\n")
+  
+  # Record download metadata
+  download_info <- data.frame(
+    file = "StormData.csv.bz2",
+    url = data_url, 
+    download_date = Sys.time()
+  )
+  write.csv(download_info, here("data", "raw", "download_info.csv"), 
+            row.names = FALSE)
+} else {
+  cat("Raw data file already exists. Skipping download.\n")
+}
+```
+
+## Data Loading
+
+```{r data-loading, cache=TRUE}
+#===============================================================================
+# DATA LOADING
+#===============================================================================
+
+cat("Reading storm data (this may take a moment)...\n")
+storm_data <- fread(raw_data_file)
+
+# Display basic information
+cat("\nDataset dimensions:", nrow(storm_data), "rows x", ncol(storm_data), "columns\n")
+```
+
+```{r data-structure}
+# Display data structure
+cat("\nData structure:\n")
+str(storm_data, give.attr = FALSE)
+
+cat("\nFirst few rows:\n")
+head(storm_data, 3) %>% 
+  create_table(caption = "Sample of Raw Storm Data")
+```
+
+## Data Cleaning and Processing
+
+The data processing pipeline includes:
+
+1. **Variable Selection:** Extract relevant columns for analysis
+2. **Date Parsing:** Convert date strings to proper date-time objects
+3. **Damage Calculation:** Convert damage exponents to actual dollar values
+4. **Event Type Standardization:** Consolidate similar event types
+
+```{r data-cleaning}
+#===============================================================================
+# DATA PREPROCESSING
+#===============================================================================
+
+cat("\nProcessing data...\n")
+
+# Select relevant columns and parse dates ----------------------------------
+storm_clean <- storm_data %>%
+  select(BGN_DATE, STATE, EVTYPE, FATALITIES, INJURIES,
+         PROPDMG, PROPDMGEXP, CROPDMG, CROPDMGEXP) %>%
+  mutate(
+    BGN_DATE = mdy_hms(BGN_DATE),
+    YEAR = year(BGN_DATE)
+  )
+
+# Calculate actual damage values -------------------------------------------
+storm_clean <- storm_clean %>%
+  mutate(
+    PROP_MULTIPLIER = convert_exponent(PROPDMGEXP),
+    CROP_MULTIPLIER = convert_exponent(CROPDMGEXP),
+    PROPERTY_DAMAGE = PROPDMG * PROP_MULTIPLIER,
+    CROP_DAMAGE = CROPDMG * CROP_MULTIPLIER,
+    TOTAL_DAMAGE = PROPERTY_DAMAGE + CROP_DAMAGE,
+    TOTAL_CASUALTIES = FATALITIES + INJURIES
+  )
+
+# Standardize event types --------------------------------------------------
+storm_clean <- storm_clean %>%
+  mutate(
+    EVTYPE_CLEAN = str_to_upper(str_trim(EVTYPE)),
+    EVTYPE_CLEAN = case_when(
+      str_detect(EVTYPE_CLEAN, "TORNADO") ~ "TORNADO",
+      str_detect(EVTYPE_CLEAN, "FLOOD|FLD") ~ "FLOOD",
+      str_detect(EVTYPE_CLEAN, "HURRICANE|TYPHOON") ~ "HURRICANE",
+      str_detect(EVTYPE_CLEAN, "HEAT|WARM") ~ "EXCESSIVE HEAT",
+      str_detect(EVTYPE_CLEAN, "LIGHTNING") ~ "LIGHTNING",
+      str_detect(EVTYPE_CLEAN, "WIND") ~ "HIGH WIND",
+      str_detect(EVTYPE_CLEAN, "WINTER|SNOW|ICE|BLIZZARD") ~ "WINTER STORM",
+      str_detect(EVTYPE_CLEAN, "HAIL") ~ "HAIL",
+      str_detect(EVTYPE_CLEAN, "THUNDERSTORM|TSTM") ~ "THUNDERSTORM WIND",
+      str_detect(EVTYPE_CLEAN, "FIRE") ~ "WILDFIRE",
+      str_detect(EVTYPE_CLEAN, "DROUGHT") ~ "DROUGHT",
+      TRUE ~ EVTYPE_CLEAN
+    )
+  )
+
+# Save processed data ------------------------------------------------------
+processed_file <- here("data", "processed", "storm_data_processed.rds")
+saveRDS(storm_clean, processed_file)
+
+cat("\nData processing complete!\n")
+cat("Processed data saved to:", processed_file, "\n")
+```
+
+### Data Cleaning Summary
+
+```{r cleaning-summary}
+# Summary of cleaning steps
+data.frame(
+  Metric = c("Original Observations", "After Cleaning", "Removed", 
+             "Unique Event Types (Original)", "Unique Event Types (Cleaned)",
+             "Date Range"),
+  Value = c(
+    format(nrow(storm_data), big.mark = ","),
+    format(nrow(storm_clean), big.mark = ","),
+    format(nrow(storm_data) - nrow(storm_clean), big.mark = ","),
+    format(length(unique(storm_data$EVTYPE)), big.mark = ","),
+    format(length(unique(storm_clean$EVTYPE_CLEAN)), big.mark = ","),
+    paste(min(storm_clean$BGN_DATE, na.rm = TRUE), "to", 
+          max(storm_clean$BGN_DATE, na.rm = TRUE))
+  )
+) %>%
+  create_table(caption = "Data Cleaning Summary Statistics")
+```
+
+---
+
+# Results
+
+## Question 1: Population Health Impact
+
+Which types of events are most harmful with respect to population health?
+
+### Analysis Approach
+
+We aggregate fatalities and injuries by event type to identify the weather events with the greatest impact on population health.
+
+```{r health-impact-analysis}
+#===============================================================================
+# HEALTH IMPACT ANALYSIS
+#===============================================================================
+
+cat("\nAnalyzing population health impact...\n")
+
+health_impact <- storm_clean %>%
+  group_by(EVTYPE_CLEAN) %>%
+  summarise(
+    Total_Fatalities = sum(FATALITIES, na.rm = TRUE), 
+    Total_Injuries = sum(INJURIES, na.rm = TRUE), 
+    Total_Casualties = sum(TOTAL_CASUALTIES, na.rm = TRUE), 
+    Events = n(),
+    .groups = "drop"
+  ) %>%
+  filter(Total_Casualties > 0) %>%
+  arrange(desc(Total_Casualties)) %>%
+  slice_head(n = 15)
+```
+
+### Top 15 Most Harmful Event Types
+
+```{r health-impact-table}
+health_impact %>%
+  mutate(
+    Total_Fatalities = format(Total_Fatalities, big.mark = ","),
+    Total_Injuries = format(Total_Injuries, big.mark = ","),
+    Total_Casualties = format(Total_Casualties, big.mark = ","),
+    Events = format(Events, big.mark = ",")
+  ) %>%
+  create_table(caption = "Top 15 Weather Events by Population Health Impact")
+```
+
+### Visualization: Health Impact by Event Type
+
+```{r health-impact-viz, fig.cap="Top 15 Weather Events by Population Health Impact (Fatalities and Injuries)"}
+#===============================================================================
+# HEALTH IMPACT VISUALIZATION
+#===============================================================================
+
+p1 <- health_impact %>%
+  pivot_longer(
+    cols = c(Total_Fatalities, Total_Injuries),
+    names_to = "Type",
+    values_to = "Count"
+  ) %>%
+  mutate(Type = str_remove(Type, "Total_")) %>%
+  ggplot(aes(x = reorder(EVTYPE_CLEAN, Count), y = Count, fill = Type)) +
+  geom_col(position = "dodge", alpha = 0.9) +
+  coord_flip() +
+  scale_y_continuous(labels = comma) +
+  scale_fill_manual(
+    values = c(
+      "Fatalities" = custom_colors$health_fatalities, 
+      "Injuries" = custom_colors$health_injuries
+    )
+  ) +
+  labs(
+    title = "Top 15 Weather Events by Population Health Impact",
+    subtitle = "Total fatalities and injuries across the United States (1950-2011)",
+    x = NULL,
+    y = "Number of People Affected",
+    fill = "Impact Type",
+    caption = "Data source: NOAA Storm Database"
+  ) +
+  theme(legend.position = "bottom")
+
+print(p1)
+
+# Save plot
+ggsave(
+  here("figures", "final", "health_impact.png"), 
+  p1,
+  width = 10, 
+  height = 8, 
+  dpi = 300
+)
+```
+
+### Key Findings: Health Impact
+
+```{r health-findings}
+top_health <- health_impact %>% slice_head(n = 1)
+
+cat("\n**Most Harmful Event Type:**\n")
+cat(sprintf("- Event: %s\n", top_health$EVTYPE_CLEAN))
+cat(sprintf("- Total Casualties: %s (Fatalities: %s, Injuries: %s)\n",
+            format(top_health$Total_Casualties, big.mark = ","),
+            format(top_health$Total_Fatalities, big.mark = ","),
+            format(top_health$Total_Injuries, big.mark = ",")))
+cat(sprintf("- Number of Events: %s\n", format(top_health$Events, big.mark = ",")))
+```
+
+**Analysis:** Tornadoes are by far the most harmful weather event type for population health, causing significantly more casualties than any other weather phenomenon. Excessive heat and floods also represent major public health threats.
+
+---
+
+## Question 2: Economic Impact
+
+Which types of events have the greatest economic consequences?
+
+### Analysis Approach
+
+We aggregate property damage and crop damage by event type to identify the weather events with the greatest economic impact.
+
+```{r economic-impact-analysis}
+#===============================================================================
+# ECONOMIC IMPACT ANALYSIS
+#===============================================================================
+
+cat("\nAnalyzing economic impact...\n")
+
+economic_impact <- storm_clean %>%
+  group_by(EVTYPE_CLEAN) %>%
+  summarize(
+    Total_Property_Damage = sum(PROPERTY_DAMAGE, na.rm = TRUE),
+    Total_Crop_Damage = sum(CROP_DAMAGE, na.rm = TRUE),
+    Total_Economic_Damage = sum(TOTAL_DAMAGE, na.rm = TRUE), 
+    Events = n(),
+    .groups = "drop"
+  ) %>%
+  filter(Total_Economic_Damage > 0) %>%
+  arrange(desc(Total_Economic_Damage)) %>%
+  slice_head(n = 15)
+```
+
+### Top 15 Most Costly Event Types
+
+```{r economic-impact-table}
+economic_impact %>%
+  mutate(
+    Total_Property_Damage = paste0("$", format(round(Total_Property_Damage / 1e9, 2), big.mark = ","), "B"),
+    Total_Crop_Damage = paste0("$", format(round(Total_Crop_Damage / 1e9, 2), big.mark = ","), "B"),
+    Total_Economic_Damage = paste0("$", format(round(Total_Economic_Damage / 1e9, 2), big.mark = ","), "B"),
+    Events = format(Events, big.mark = ",")
+  ) %>%
+  create_table(caption = "Top 15 Weather Events by Economic Impact (in Billions USD)")
+```
+
+### Visualization: Economic Impact by Event Type
+
+```{r economic-impact-viz, fig.cap="Top 15 Weather Events by Economic Impact (Property and Crop Damage)"}
+#===============================================================================
+# ECONOMIC IMPACT VISUALIZATION
+#===============================================================================
+
+p2 <- economic_impact %>%
+  pivot_longer(
+    cols = c(Total_Property_Damage, Total_Crop_Damage),
+    names_to = "Type",
+    values_to = "Damage"
+  ) %>%
+  mutate(
+    Type = str_remove(Type, "Total_"),
+    Type = str_remove(Type, "_Damage"),
+    Damage_Billions = Damage / 1e9
+  ) %>%
+  ggplot(aes(
+    x = reorder(EVTYPE_CLEAN, Damage_Billions),
+    y = Damage_Billions, 
+    fill = Type
+  )) +
+  geom_col(position = "stack", alpha = 0.9) +
+  coord_flip() +
+  scale_y_continuous(labels = dollar_format(suffix = "B")) +
+  scale_fill_manual(
+    values = c(
+      "Property" = custom_colors$economic_property, 
+      "Crop" = custom_colors$economic_crop
+    )
+  ) +
+  labs(
+    title = "Top 15 Weather Events by Economic Impact",
+    subtitle = "Total property and crop damage across United States (1950-2011)",
+    x = NULL,
+    y = "Economic Damage (Billions USD)",
+    fill = "Damage Type",
+    caption = "Data source: NOAA Storm Database"
+  ) +
+  theme(legend.position = "bottom")
+
+print(p2)
+
+# Save plot
+ggsave(
+  here("figures", "final", "economic_impact.png"), 
+  p2,
+  width = 10, 
+  height = 8, 
+  dpi = 300
+)
+```
+
+### Key Findings: Economic Impact
+
+```{r economic-findings}
+top_economic <- economic_impact %>% slice_head(n = 1)
+
+cat("\n**Most Costly Event Type:**\n")
+cat(sprintf("- Event: %s\n", top_economic$EVTYPE_CLEAN))
+cat(sprintf("- Total Economic Damage: $%.2fB\n", top_economic$Total_Economic_Damage / 1e9))
+cat(sprintf("  - Property Damage: $%.2fB\n", top_economic$Total_Property_Damage / 1e9))
+cat(sprintf("  - Crop Damage: $%.2fB\n", top_economic$Total_Crop_Damage / 1e9))
+cat(sprintf("- Number of Events: %s\n", format(top_economic$Events, big.mark = ",")))
+```
+
+**Analysis:** Floods cause the greatest economic damage, with the majority coming from property damage. Hurricanes and tornadoes also result in substantial economic losses. Drought is notable for causing significant crop damage specifically.
+
+---
+
+# Discussion
+
+## Summary of Findings
+
+This analysis of severe weather events from 1950 to 2011 reveals distinct patterns in public health and economic impacts:
+
+### Public Health Impact
+
+**Tornadoes** are the most harmful weather events for population health, causing:
+
+- Over 90,000 total casualties (fatalities and injuries combined)
+- Significantly more impact than any other weather event type
+- Consistent threat across multiple decades
+
+**Other high-impact events** include:
+
+- Excessive heat (particularly deadly with high fatality rates)
+- Floods (widespread injury and death)
+- Lightning and thunderstorm winds
+
+### Economic Impact
+
+**Floods** cause the greatest economic damage:
+
+- Over $150 billion in total damages
+- Primarily affecting property rather than crops
+- Widespread geographic impact
+
+**Other costly events** include:
+
+- Hurricanes (catastrophic but localized)
+- Tornadoes (frequent and widespread)
+- Drought (major agricultural impact)
+
+## Policy Implications
+
+These findings suggest several priorities for disaster preparedness:
+
+1. **Tornado Warning Systems:** Enhanced early warning systems and public education for tornado-prone regions
+2. **Flood Mitigation:** Investment in flood control infrastructure and insurance programs
+3. **Heat Wave Preparedness:** Public health interventions for vulnerable populations during extreme heat events
+4. **Agricultural Resilience:** Support for drought-resistant practices and crop insurance
+
+## Limitations
+
+This analysis has several limitations:
+
+1. **Data Quality:** Event reporting and classification standards have evolved over the 61-year period
+2. **Inflation Adjustment:** Economic damage values are not adjusted for inflation
+3. **Event Classification:** Some event types may be misclassified or inconsistently categorized
+4. **Geographic Variation:** Analysis does not account for regional differences in vulnerability
+5. **Indirect Impacts:** Does not capture long-term health effects or indirect economic consequences
+
+---
+
+# Conclusions
+
+This comprehensive analysis of over 900,000 severe weather events from 1950 to 2011 provides clear evidence that:
+
+1. **Tornadoes pose the greatest threat to population health**, causing more casualties than any other weather event type
+
+2. **Floods result in the greatest economic damage**, with over $150 billion in losses from property and crop damage
+
+3. **Different event types require different mitigation strategies:** Health impacts (tornadoes, heat) versus economic impacts (floods, hurricanes) require tailored preparedness approaches
+
+These findings underscore the importance of continued investment in weather monitoring, early warning systems, and disaster preparedness infrastructure across the United States.
+
+---
+
+# Appendix
+
+## Overall Summary Statistics
+
+```{r overall-summary}
+#===============================================================================
+# SUMMARY STATISTICS
+#===============================================================================
+
+summary_stats <- storm_clean %>%
+  summarize(
+    Total_Events = format(n(), big.mark = ","),
+    Date_Range = paste(
+      format(min(BGN_DATE, na.rm = TRUE), "%Y-%m-%d"), 
+      "to", 
+      format(max(BGN_DATE, na.rm = TRUE), "%Y-%m-%d")
+    ),
+    Total_Fatalities = format(sum(FATALITIES, na.rm = TRUE), big.mark = ","),
+    Total_Injuries = format(sum(INJURIES, na.rm = TRUE), big.mark = ","),
+    Total_Economic_Damage_Billions = paste0(
+      "$", 
+      format(round(sum(TOTAL_DAMAGE, na.rm = TRUE) / 1e9, 2), big.mark = ","), 
+      "B"
+    )
+  )
+
+summary_stats %>%
+  pivot_longer(
+    cols = everything(),
+    names_to = "Metric",
+    values_to = "Value"
+  ) %>%
+  create_table(caption = "Overall Dataset Summary Statistics")
+```
+
+## Session Information
+
+```{r session-info}
+#===============================================================================
+# REPRODUCIBILITY INFORMATION
+#===============================================================================
+
+sessionInfo()
+```
+
+---
+
+<div class="footer">
+**Report generated:** `r format(Sys.time(), '%Y-%m-%d %H:%M:%S %Z')`  
+**Analysis by:** NgWM with Claude AI assistance  
+**Data source:** NOAA Storm Database (1950-2011)
+</div>

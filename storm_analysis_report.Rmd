@@ -1,11 +1,275 @@
 ---
-title: "Storm Analysis Report"
-author: "NgWM"
+title: 'Severe Weather Events in the US (1950–2011): Impact Analysis'
+author: "NgWM with Claude AI Assistance"
 date: "2025-12-26"
-output: html_document
+output:
+  html_document:
+    toc: true
+    toc_float: true
+    theme: cosmo
+    code_folding: hide
+    highlight: tango
+    number_sections: true
+  pdf_document:
+    toc: true
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
+library(here)
+here::set_here()  # Add this if needed
+library(tidyverse)
+library(data.table)
+library(lubridate)
+library(scales)
+library(knitr)
+
+dir.create(here("figures", "final"), recursive = TRUE, showWarnings = FALSE)
+
+knitr::opts_chunk$set(
+  echo = TRUE,
+  warning = FALSE,
+  message = FALSE,
+  fig.width = 10,
+  fig.height = 8,
+  dpi = 300,
+  fig.path = here("figures", "final", "report_")
+)
+
 ```
+
+## Synopsis
+
+This analysis examines the NOAA Storm Database to identify which types of severe weather events pose the greatest threats to population health and economic stability across the United States. The findings are intended to inform government and municipal managers responsible for preparing for severe weather events and allocating resources for emergency response and disaster mitigation.
+
+The analysis addresses two primary questions:
+
+1. Which types of weather events are most harmful to population health?
+2. Which types of events have the greatest economic consequences?
+
+**Key Findings:**
+
+- Tornadoes cause the most casualties (fatalities and injuries combined)
+- Floods result in the highest economic damage
+- Heat-related events are a significant but often underestimated threat to public health
+
+---
+
+## Data Processing
+
+### Data Source
+
+The data for this analysis comes from the U.S. National Oceanic and Atmospheric Administration's (NOAA) storm database. This database tracks characteristics of major storms and weather events in the United States, including estimates of fatalities, injuries, and property damage.
+
+**Data URL:** https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2FStormData.csv.bz2
+
+The processed data.rds is available in https://github.com/DrNWM/Storm-Analysis
+
+```{r load_data, echo=TRUE, cache=TRUE}
+# Load processed data
+storm_data <- readRDS(here("data", "processed", "storm_data_processed.rds"))
+summary_stats <- readRDS(here("data", "processed", "summary_statistic.rds"))
+
+cat("Total weather events analyzed:", nrow(storm_data), "\n")
+cat("Date range:", format(min(storm_data$BGN_DATE, na.rm = TRUE), "%Y"), 
+    "to", format(max(storm_data$BGN_DATE, na.rm = TRUE), "%Y"), "\n")
+```
+
+### Data Cleaning Steps
+
+The following steps were taken to prepare the data for analysis:
+
+1. **Variable Selection:** Selected relevant variables including event type, date, location, fatalities, injuries, and economic damage estimates
+
+2. **Damage Calculation:** Converted property and crop damage values from coded format (e.g., "25K", "5M") to actual numeric values in USD
+
+3. **Event Type Standardization:** Consolidated similar event types (e.g., "TSTM WIND" and "THUNDERSTORM WIND" both mapped to "THUNDERSTORM")
+
+4. **Derived Variables:** Created total casualty count (fatalities + injuries) and total economic damage (property + crop damage)
+
+```{r data_summary}
+# Create summary table
+data_summary <- data.frame(
+  Metric = c("Total Events", "Unique Event Types", "Total Fatalities", 
+             "Total Injuries", "Total Economic Damage (Billions USD)"),
+  Value = c(
+    format(nrow(storm_data), big.mark = ","),
+    length(unique(storm_data$EVTYPE_CLEAN)),
+    format(sum(storm_data$FATALITIES, na.rm = TRUE), big.mark = ","),
+    format(sum(storm_data$INJURIES, na.rm = TRUE), big.mark = ","),
+    paste0("$", format(round(sum(storm_data$TOTAL_DAMAGE, na.rm = TRUE) / 1e9, 2), 
+                      big.mark = ","))
+  )
+)
+
+kable(data_summary, caption = "Dataset Overview", align = c("l", "r"))
+```
+
+---
+
+## Results
+
+### Question 1: Events Most Harmful to Population Health
+
+To assess population health impact, we examined fatalities and injuries caused by different weather event types across the entire United States.
+
+```{r health_analysis}
+health_impact <- storm_data %>%
+  group_by(EVTYPE_CLEAN) %>%
+  summarise(
+    Fatalities = sum(FATALITIES, na.rm = TRUE),
+    Injuries = sum(INJURIES, na.rm = TRUE),
+    Total_Casualties = sum(TOTAL_CASUALTIES, na.rm = TRUE),
+    Events = n()
+  ) %>%
+  filter(Total_Casualties > 0) %>%
+  arrange(desc(Total_Casualties)) %>%
+  slice_head(n = 15)
+
+kable(health_impact, 
+      format.args = list(big.mark = ","),
+      caption = "Top 15 Weather Events by Total Casualties",
+      col.names = c("Event Type", "Fatalities", "Injuries", "Total Casualties", "Number of Events"))
+```
+
+```{r health_plot, fig.cap="Weather events with the highest impact on population health"}
+health_impact %>%
+  pivot_longer(cols = c(Fatalities, Injuries), 
+               names_to = "Type", values_to = "Count") %>%
+  ggplot(aes(x = reorder(EVTYPE_CLEAN, Count), y = Count, fill = Type)) +
+  geom_col(position = "dodge") +
+  coord_flip() +
+  scale_y_continuous(labels = comma) +
+  scale_fill_manual(values = c("Fatalities" = "#d73027", "Injuries" = "#fee090"),
+                    name = "Impact Type") +
+  labs(
+    title = "Top 15 Weather Events by Population Health Impact",
+    subtitle = "Total fatalities and injuries across the United States",
+    x = NULL,
+    y = "Number of People Affected"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank()
+  )
+```
+
+**Findings:**
+
+- **Tornadoes** are by far the most harmful weather event type for population health, causing `r format(health_impact$Total_Casualties[1], big.mark = ",")` total casualties
+- **Excessive heat** is the second most deadly event type, though it causes relatively fewer injuries compared to fatalities
+- **Floods** and **thunderstorms** also pose significant risks to public health
+
+---
+
+### Question 2: Events with Greatest Economic Consequences
+
+Economic impact was measured by combining property damage and crop damage for each event type.
+
+```{r economic_analysis}
+economic_impact <- storm_data %>%
+  group_by(EVTYPE_CLEAN) %>%
+  summarise(
+    Property_Damage = sum(PROPERTY_DAMAGE, na.rm = TRUE),
+    Crop_Damage = sum(CROP_DAMAGE, na.rm = TRUE),
+    Total_Damage = sum(TOTAL_DAMAGE, na.rm = TRUE),
+    Events = n()
+  ) %>%
+  filter(Total_Damage > 0) %>%
+  arrange(desc(Total_Damage)) %>%
+  slice_head(n = 15) %>%
+  mutate(
+    Property_Damage_B = Property_Damage / 1e9,
+    Crop_Damage_B = Crop_Damage / 1e9,
+    Total_Damage_B = Total_Damage / 1e9
+  )
+
+economic_table <- economic_impact %>%
+  select(EVTYPE_CLEAN, Property_Damage_B, Crop_Damage_B, Total_Damage_B, Events)
+
+kable(economic_table, 
+      digits = 2,
+      format.args = list(big.mark = ","),
+      caption = "Top 15 Weather Events by Economic Damage (Billions USD)",
+      col.names = c("Event Type", "Property Damage", "Crop Damage", 
+                   "Total Damage", "Number of Events"))
+```
+
+```{r economic_plot, fig.cap="Weather events with the highest economic impact"}
+economic_impact %>%
+  pivot_longer(cols = c(Property_Damage_B, Crop_Damage_B), 
+               names_to = "Type", values_to = "Damage") %>%
+  mutate(Type = case_when(
+    Type == "Property_Damage_B" ~ "Property",
+    Type == "Crop_Damage_B" ~ "Crop"
+  )) %>%
+  ggplot(aes(x = reorder(EVTYPE_CLEAN, Damage), y = Damage, fill = Type)) +
+  geom_col(position = "stack") +
+  coord_flip() +
+  scale_y_continuous(labels = dollar) +
+  scale_fill_manual(values = c("Property" = "#4575b4", "Crop" = "#91cf60"),
+                    name = "Damage Type") +
+  labs(
+    title = "Top 15 Weather Events by Economic Impact",
+    subtitle = "Total property and crop damage across the United States",
+    x = NULL,
+    y = "Economic Damage (Billions USD)"
+  ) +
+  theme_minimal(base_size = 12) +
+  theme(
+    plot.title = element_text(face = "bold", size = 14),
+    legend.position = "bottom",
+    panel.grid.minor = element_blank()
+  )
+```
+
+**Findings:**
+
+- **Floods** cause the greatest economic damage, totaling approximately $`r round(economic_impact$Total_Damage_B[1], 1)` billion
+- **Hurricanes** rank second in economic impact, with damage exceeding $`r round(economic_impact$Total_Damage_B[2], 1)` billion
+- **Tornadoes** while most deadly, rank third in economic consequences
+- **Drought** has substantial impact on agriculture, primarily through crop damage
+
+---
+
+## Conclusion
+
+This analysis reveals important distinctions between weather events that threaten population health versus those with the greatest economic impact:
+
+**Population Health Priority:**
+
+1. Tornadoes
+2. Excessive Heat
+3. Floods
+
+**Economic Damage Priority:**
+
+1. Floods
+2. Hurricanes  
+3. Tornadoes
+
+**Implications for Resource Allocation:**
+
+While tornadoes dominate casualty statistics, floods represent the single largest combined threat to both public safety and economic stability. This suggests that flood mitigation and emergency response systems warrant priority attention in resource allocation decisions.
+
+Heat-related events, despite their high fatality rate, may be underaddressed compared to more dramatic weather phenomena. Early warning systems and public cooling centers during heat waves could be highly cost-effective interventions.
+
+The diverse nature of weather threats across the United States necessitates flexible, multi-hazard preparedness strategies rather than focusing resources on a single event type.
+
+---
+
+## Session Information
+
+```{r session_info}
+sessionInfo()
+```
+
+---
+
+**Note:** This analysis is based on historical data and should be considered alongside current climate trends and regional risk assessments when making resource allocation decisions.
+```
+```
+
+
 

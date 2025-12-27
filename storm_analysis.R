@@ -12,7 +12,7 @@ getwd()
 # Install required package if not already installed
 required_packages <-  c("here", "usethis", "renv", "tidyverse", 
                         "data.table", "lubridate", "scales",
-                        "R.utils","knitr")
+                        "R.utils","knitr","ggplot2")
 
 new_packages <- required_packages[!(required_packages %in% installed.packages()[,"Package"])]
 if(length(new_packages) > 0){
@@ -25,6 +25,7 @@ library(tidyverse)
 library(data.table)
 library(lubridate)
 library(scales)
+library(R.utils)
 
 # 2. CREATE PROJECT STRUCTURE ---
 #create directory structure
@@ -136,6 +137,143 @@ processed_file <-  here("data","processed","storm_data_processed.rds")
 saveRDS(storm_clean,processed_file)
 cat("\nProcessed data saved to:", processed_file,"\n")
 
+# 6. ANALYSIS: POPULATION HEALTH IMPACT---
+cat("\nAnalyzing population health impact\n")
 
+health_impact <-  storm_clean |>
+        group_by(EVTYPE_CLEAN) |>
+        summarise(
+                Total_Fatalities = sum (FATALITIES,na.rm = TRUE), 
+                Total_Injuries = sum(INJURIES,na.rm = TRUE), 
+                Total_Casualties = sum(TOTAL_CASUALTIES, na.rm = TRUE), 
+                Events = n()
+        ) |>
+        filter(Total_Casualties >0 ) |>
+        arrange(desc(Total_Casualties)) |>
+        slice_head(n=15)
+
+print(health_impact)
+
+# 7. ANALYSIS: ECONOMIC IMPACT ---
+cat("\nAnalyzing economic impact\n")
+
+economic_impact <- storm_clean |>
+        group_by(EVTYPE_CLEAN) |>
+        summarize(
+                Total_Property_Damage = sum(PROPERTY_DAMAGE, na.rm =TRUE),
+                Total_Crop_Damage = sum(CROP_DAMAGE, na.rm = TRUE),
+                Total_Economic_Damage = sum(TOTAL_DAMAGE, na.rm=TRUE), 
+                Events = n()
+        ) |>
+        filter(Total_Economic_Damage > 0) |>
+        arrange(desc(Total_Economic_Damage)) |>
+        slice_head(n=15)
+
+print(economic_impact)
+
+# 8. CREATE VISUALIZATION --
+cat("\nCreating Visualizations...\n")
+
+# Plot 1: Health Impact
+p1 <- health_impact |>
+        pivot_longer(
+                cols = c(Total_Fatalities, Total_Injuries),
+                names_to = "Type",
+                values_to = "Count"
+        ) |>
+        mutate(Type = str_remove(Type, "Total_")) |>
+        # Add this to get top 15 (by total Count across both types)
+        slice_max(order_by = Count, n = 15) |>
+        ggplot(aes(x = reorder(EVTYPE_CLEAN, Count), y = Count, fill = Type)) +
+        geom_col(position = "dodge") +
+        coord_flip() +
+        scale_y_continuous(labels = comma) +
+        scale_fill_manual(values = c("Fatalities" = "#d73027", "Injuries" = "#fee090")) +
+        labs(
+                title = "Top 15 Weather Events by Population Health Impact",
+                subtitle = "Total fatalities and injuries across the United States",
+                x = "Event Type",
+                y = "Number of People Affected",
+                fill = "Impact type"
+        ) +
+        theme_minimal() +
+        theme(
+                plot.title = element_text(face = "bold", size = 14),
+                legend.position = "bottom"
+        )
+
+ggsave(here("figures", "final", "health_impact.png"), p1,
+       width = 10, height = 8, dpi = 300)
+
+# Plot 2: Economic Impact
+
+p2 <- economic_impact |>
+        pivot_longer(
+                cols = c(Total_Property_Damage, Total_Crop_Damage),
+                names_to = "Type",
+                values_to = "Damage"
+        ) |>
+        mutate(
+                Type = str_remove(Type,"Total_"),
+                Type = str_remove(Type,"_Damage"),
+                Damage_Billions = Damage/1e9
+        ) |>
+        slice_max(order_by = Damage_Billions, n=15) |>
+        ggplot(aes(
+                x = reorder(EVTYPE_CLEAN, Damage_Billions),
+                y = Damage_Billions, fill = Type
+        )) +
+        geom_col(position = "stack") +
+        coord_flip() +
+        scale_y_continuous(labels = dollar) +
+        scale_fill_manual(
+                values = c("Property" = "#4575b4", "Crop" = "#91cf60"),
+                drop = FALSE            
+        ) +
+        labs(
+                title = "Top 15 Weather Events by Economic Impact",
+                subtitle = "total property and crop damage across United State",
+                x = 'Event Type',
+                y = "Economic Damage (Billions USD)",
+                fill = "Damage Type"
+        ) +
+        theme_minimal() +
+        theme(
+                plot.title = element_text(face = "bold", size = 14),
+                legend.position = "bottom"
+        )
+
+ggsave(here("figures","final", "economic_impact.png"), p2,
+       width = 10, height = 8, dpi = 300)
+
+
+cat("\nVisualizations saved to figures/final\n")
+
+# 9. SUMMARY STATISTICS ---
+summary_stats <- list(
+        health = health_impact,
+        economic = economic_impact,
+        overall = storm_clean|>
+                summarize(
+                        Total_Events = n(), 
+                        Date_Range = paste(min (BGN_DATE, na.rm = TRUE), "to", 
+                                           max (BGN_DATE, na.rm = TRUE)), 
+                        Total_Fatalities = sum(FATALITIES,na.rm = TRUE), 
+                        Total_Injuries = sum(INJURIES,na.rm = TRUE), 
+                        Total_Economic_Damage_Billions = sum(TOTAL_DAMAGE, na.rm = TRUE)/1e9
+                )
+        )
+
+saveRDS(summary_stats, here("data", "processed", "summary_statistic.rds"))
+
+cat("\n=== ANALYSIS COMPLETE ===\n")
+cat("\nSummary Statistics\n")
+print(summary_stats$overall)
+
+cat("\nTop 5 Most Harmful Events\n")
+print(head(health_impact,5))
+
+cat("\nTop 5 Most Costly Events\n")
+print(head(economic_impact,5))
 
 

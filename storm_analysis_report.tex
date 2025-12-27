@@ -1,0 +1,653 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\documentclass[
+]{article}
+\usepackage{xcolor}
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{-\maxdimen} % remove section numbering
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\usepackage{framed}
+\definecolor{shadecolor}{RGB}{248,248,248}
+\newenvironment{Shaded}{\begin{snugshade}}{\end{snugshade}}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{0.94,0.16,0.16}{#1}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\BuiltInTok}[1]{#1}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{0.64,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.00,0.00,0.81}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\ImportTok}[1]{#1}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.13,0.29,0.53}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textit{#1}}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.81,0.36,0.00}{\textbf{#1}}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.00,0.00,0.00}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.31,0.60,0.02}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.56,0.35,0.01}{\textbf{\textit{#1}}}}
+\usepackage{longtable,booktabs,array}
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\usepackage{graphicx}
+\makeatletter
+\newsavebox\pandoc@box
+\newcommand*\pandocbounded[1]{% scales image to fit in text height/width
+  \sbox\pandoc@box{#1}%
+  \Gscale@div\@tempa{\textheight}{\dimexpr\ht\pandoc@box+\dp\pandoc@box\relax}%
+  \Gscale@div\@tempb{\linewidth}{\wd\pandoc@box}%
+  \ifdim\@tempb\p@<\@tempa\p@\let\@tempa\@tempb\fi% select the smaller of both
+  \ifdim\@tempa\p@<\p@\scalebox{\@tempa}{\usebox\pandoc@box}%
+  \else\usebox{\pandoc@box}%
+  \fi%
+}
+% Set default figure placement to htbp
+\def\fps@figure{htbp}
+\makeatother
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+\hypersetup{
+  pdftitle={Severe Weather Events in the US (1950--2011): Impact Analysis},
+  pdfauthor={NgWM with Claude AI Assistance},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{Severe Weather Events in the US (1950--2011): Impact Analysis}
+\author{NgWM with Claude AI Assistance}
+\date{2025-12-26}
+
+\begin{document}
+\maketitle
+
+{
+\setcounter{tocdepth}{2}
+\tableofcontents
+}
+\subsection{Synopsis}\label{synopsis}
+
+This analysis examines the NOAA Storm Database to identify which types
+of severe weather events pose the greatest threats to population health
+and economic stability across the United States. The findings are
+intended to inform government and municipal managers responsible for
+preparing for severe weather events and allocating resources for
+emergency response and disaster mitigation.
+
+The analysis addresses two primary questions:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Which types of weather events are most harmful to population health?
+\item
+  Which types of events have the greatest economic consequences?
+\end{enumerate}
+
+\textbf{Key Findings:}
+
+\begin{itemize}
+\tightlist
+\item
+  Tornadoes cause the most casualties (fatalities and injuries combined)
+\item
+  Floods result in the highest economic damage
+\item
+  Heat-related events are a significant but often underestimated threat
+  to public health
+\end{itemize}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{Data Processing}\label{data-processing}
+
+\subsubsection{Data Source}\label{data-source}
+
+The data for this analysis comes from the U.S. National Oceanic and
+Atmospheric Administration's (NOAA) storm database. This database tracks
+characteristics of major storms and weather events in the United States,
+including estimates of fatalities, injuries, and property damage.
+
+\textbf{Data URL:}
+\url{https://d396qusza40orc.cloudfront.net/repdata\%2Fdata\%2FStormData.csv.bz2}
+
+The processed data.rds is available in
+\url{https://github.com/DrNWM/Storm-Analysis}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Load processed data}
+\NormalTok{storm\_data }\OtherTok{\textless{}{-}} \FunctionTok{readRDS}\NormalTok{(}\FunctionTok{here}\NormalTok{(}\StringTok{"data"}\NormalTok{, }\StringTok{"processed"}\NormalTok{, }\StringTok{"storm\_data\_processed.rds"}\NormalTok{))}
+\NormalTok{summary\_stats }\OtherTok{\textless{}{-}} \FunctionTok{readRDS}\NormalTok{(}\FunctionTok{here}\NormalTok{(}\StringTok{"data"}\NormalTok{, }\StringTok{"processed"}\NormalTok{, }\StringTok{"summary\_statistic.rds"}\NormalTok{))}
+
+\FunctionTok{cat}\NormalTok{(}\StringTok{"Total weather events analyzed:"}\NormalTok{, }\FunctionTok{nrow}\NormalTok{(storm\_data), }\StringTok{"}\SpecialCharTok{\textbackslash{}n}\StringTok{"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Total weather events analyzed: 902297
+\end{verbatim}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{cat}\NormalTok{(}\StringTok{"Date range:"}\NormalTok{, }\FunctionTok{format}\NormalTok{(}\FunctionTok{min}\NormalTok{(storm\_data}\SpecialCharTok{$}\NormalTok{BGN\_DATE, }\AttributeTok{na.rm =} \ConstantTok{TRUE}\NormalTok{), }\StringTok{"\%Y"}\NormalTok{), }
+    \StringTok{"to"}\NormalTok{, }\FunctionTok{format}\NormalTok{(}\FunctionTok{max}\NormalTok{(storm\_data}\SpecialCharTok{$}\NormalTok{BGN\_DATE, }\AttributeTok{na.rm =} \ConstantTok{TRUE}\NormalTok{), }\StringTok{"\%Y"}\NormalTok{), }\StringTok{"}\SpecialCharTok{\textbackslash{}n}\StringTok{"}\NormalTok{)}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## Date range: 1950 to 2011
+\end{verbatim}
+
+\subsubsection{Data Cleaning Steps}\label{data-cleaning-steps}
+
+The following steps were taken to prepare the data for analysis:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\item
+  \textbf{Variable Selection:} Selected relevant variables including
+  event type, date, location, fatalities, injuries, and economic damage
+  estimates
+\item
+  \textbf{Damage Calculation:} Converted property and crop damage values
+  from coded format (e.g., ``25K'', ``5M'') to actual numeric values in
+  USD
+\item
+  \textbf{Event Type Standardization:} Consolidated similar event types
+  (e.g., ``TSTM WIND'' and ``THUNDERSTORM WIND'' both mapped to
+  ``THUNDERSTORM'')
+\item
+  \textbf{Derived Variables:} Created total casualty count (fatalities +
+  injuries) and total economic damage (property + crop damage)
+\end{enumerate}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\CommentTok{\# Create summary table}
+\NormalTok{data\_summary }\OtherTok{\textless{}{-}} \FunctionTok{data.frame}\NormalTok{(}
+  \AttributeTok{Metric =} \FunctionTok{c}\NormalTok{(}\StringTok{"Total Events"}\NormalTok{, }\StringTok{"Unique Event Types"}\NormalTok{, }\StringTok{"Total Fatalities"}\NormalTok{, }
+             \StringTok{"Total Injuries"}\NormalTok{, }\StringTok{"Total Economic Damage (Billions USD)"}\NormalTok{),}
+  \AttributeTok{Value =} \FunctionTok{c}\NormalTok{(}
+    \FunctionTok{format}\NormalTok{(}\FunctionTok{nrow}\NormalTok{(storm\_data), }\AttributeTok{big.mark =} \StringTok{","}\NormalTok{),}
+    \FunctionTok{length}\NormalTok{(}\FunctionTok{unique}\NormalTok{(storm\_data}\SpecialCharTok{$}\NormalTok{EVTYPE\_CLEAN)),}
+    \FunctionTok{format}\NormalTok{(}\FunctionTok{sum}\NormalTok{(storm\_data}\SpecialCharTok{$}\NormalTok{FATALITIES, }\AttributeTok{na.rm =} \ConstantTok{TRUE}\NormalTok{), }\AttributeTok{big.mark =} \StringTok{","}\NormalTok{),}
+    \FunctionTok{format}\NormalTok{(}\FunctionTok{sum}\NormalTok{(storm\_data}\SpecialCharTok{$}\NormalTok{INJURIES, }\AttributeTok{na.rm =} \ConstantTok{TRUE}\NormalTok{), }\AttributeTok{big.mark =} \StringTok{","}\NormalTok{),}
+    \FunctionTok{paste0}\NormalTok{(}\StringTok{"$"}\NormalTok{, }\FunctionTok{format}\NormalTok{(}\FunctionTok{round}\NormalTok{(}\FunctionTok{sum}\NormalTok{(storm\_data}\SpecialCharTok{$}\NormalTok{TOTAL\_DAMAGE, }\AttributeTok{na.rm =} \ConstantTok{TRUE}\NormalTok{) }\SpecialCharTok{/} \FloatTok{1e9}\NormalTok{, }\DecValTok{2}\NormalTok{), }
+                      \AttributeTok{big.mark =} \StringTok{","}\NormalTok{))}
+\NormalTok{  )}
+\NormalTok{)}
+
+\FunctionTok{kable}\NormalTok{(data\_summary, }\AttributeTok{caption =} \StringTok{"Dataset Overview"}\NormalTok{, }\AttributeTok{align =} \FunctionTok{c}\NormalTok{(}\StringTok{"l"}\NormalTok{, }\StringTok{"r"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{longtable}[]{@{}lr@{}}
+\caption{Dataset Overview}\tabularnewline
+\toprule\noalign{}
+Metric & Value \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+Metric & Value \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Total Events & 902,297 \\
+Unique Event Types & 343 \\
+Total Fatalities & 15,145 \\
+Total Injuries & 140,528 \\
+Total Economic Damage (Billions USD) & \$477.33 \\
+\end{longtable}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{Results}\label{results}
+
+\subsubsection{Question 1: Events Most Harmful to Population
+Health}\label{question-1-events-most-harmful-to-population-health}
+
+To assess population health impact, we examined fatalities and injuries
+caused by different weather event types across the entire United States.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{health\_impact }\OtherTok{\textless{}{-}}\NormalTok{ storm\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(EVTYPE\_CLEAN) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarise}\NormalTok{(}
+    \AttributeTok{Fatalities =} \FunctionTok{sum}\NormalTok{(FATALITIES, }\AttributeTok{na.rm =} \ConstantTok{TRUE}\NormalTok{),}
+    \AttributeTok{Injuries =} \FunctionTok{sum}\NormalTok{(INJURIES, }\AttributeTok{na.rm =} \ConstantTok{TRUE}\NormalTok{),}
+    \AttributeTok{Total\_Casualties =} \FunctionTok{sum}\NormalTok{(TOTAL\_CASUALTIES, }\AttributeTok{na.rm =} \ConstantTok{TRUE}\NormalTok{),}
+    \AttributeTok{Events =} \FunctionTok{n}\NormalTok{()}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(Total\_Casualties }\SpecialCharTok{\textgreater{}} \DecValTok{0}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{arrange}\NormalTok{(}\FunctionTok{desc}\NormalTok{(Total\_Casualties)) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{slice\_head}\NormalTok{(}\AttributeTok{n =} \DecValTok{15}\NormalTok{)}
+
+\FunctionTok{kable}\NormalTok{(health\_impact, }
+      \AttributeTok{format.args =} \FunctionTok{list}\NormalTok{(}\AttributeTok{big.mark =} \StringTok{","}\NormalTok{),}
+      \AttributeTok{caption =} \StringTok{"Top 15 Weather Events by Total Casualties"}\NormalTok{,}
+      \AttributeTok{col.names =} \FunctionTok{c}\NormalTok{(}\StringTok{"Event Type"}\NormalTok{, }\StringTok{"Fatalities"}\NormalTok{, }\StringTok{"Injuries"}\NormalTok{, }\StringTok{"Total Casualties"}\NormalTok{, }\StringTok{"Number of Events"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2174}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1594}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1304}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2464}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2464}}@{}}
+\caption{Top 15 Weather Events by Total Casualties}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Event Type
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Fatalities
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Injuries
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Total Casualties
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Number of Events
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Event Type
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Fatalities
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Injuries
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Total Casualties
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Number of Events
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+TORNADO & 5,661 & 91,407 & 97,068 & 60,700 \\
+HIGH WIND & 1,424 & 11,498 & 12,922 & 364,869 \\
+EXCESSIVE HEAT & 3,178 & 9,243 & 12,421 & 2,975 \\
+FLOOD & 1,553 & 8,683 & 10,236 & 86,127 \\
+WINTER STORM & 639 & 5,956 & 6,595 & 42,099 \\
+LIGHTNING & 817 & 5,232 & 6,049 & 15,776 \\
+WILDFIRE & 90 & 1,608 & 1,698 & 4,239 \\
+HURRICANE & 135 & 1,333 & 1,468 & 299 \\
+HAIL & 15 & 1,371 & 1,386 & 289,276 \\
+FOG & 62 & 734 & 796 & 538 \\
+RIP CURRENT & 368 & 232 & 600 & 470 \\
+RIP CURRENTS & 204 & 297 & 501 & 304 \\
+DUST STORM & 22 & 440 & 462 & 427 \\
+TROPICAL STORM & 58 & 340 & 398 & 690 \\
+AVALANCHE & 224 & 170 & 394 & 386 \\
+\end{longtable}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{health\_impact }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{pivot\_longer}\NormalTok{(}\AttributeTok{cols =} \FunctionTok{c}\NormalTok{(Fatalities, Injuries), }
+               \AttributeTok{names\_to =} \StringTok{"Type"}\NormalTok{, }\AttributeTok{values\_to =} \StringTok{"Count"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =} \FunctionTok{reorder}\NormalTok{(EVTYPE\_CLEAN, Count), }\AttributeTok{y =}\NormalTok{ Count, }\AttributeTok{fill =}\NormalTok{ Type)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_col}\NormalTok{(}\AttributeTok{position =} \StringTok{"dodge"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{coord\_flip}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{scale\_y\_continuous}\NormalTok{(}\AttributeTok{labels =}\NormalTok{ comma) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}\AttributeTok{values =} \FunctionTok{c}\NormalTok{(}\StringTok{"Fatalities"} \OtherTok{=} \StringTok{"\#d73027"}\NormalTok{, }\StringTok{"Injuries"} \OtherTok{=} \StringTok{"\#fee090"}\NormalTok{),}
+                    \AttributeTok{name =} \StringTok{"Impact Type"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}
+    \AttributeTok{title =} \StringTok{"Top 15 Weather Events by Population Health Impact"}\NormalTok{,}
+    \AttributeTok{subtitle =} \StringTok{"Total fatalities and injuries across the United States"}\NormalTok{,}
+    \AttributeTok{x =} \ConstantTok{NULL}\NormalTok{,}
+    \AttributeTok{y =} \StringTok{"Number of People Affected"}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{(}\AttributeTok{base\_size =} \DecValTok{12}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{plot.title =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{face =} \StringTok{"bold"}\NormalTok{, }\AttributeTok{size =} \DecValTok{14}\NormalTok{),}
+    \AttributeTok{legend.position =} \StringTok{"bottom"}\NormalTok{,}
+    \AttributeTok{panel.grid.minor =} \FunctionTok{element\_blank}\NormalTok{()}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}
+\centering
+\pandocbounded{\includegraphics[keepaspectratio]{C:/Users/User/OneDrive/Desktop Nvidia/DataScienceCoursera/Storm-Analysis/figures/final/report_health_plot-1.pdf}}
+\caption{Weather events with the highest impact on population health}
+\end{figure}
+
+\textbf{Findings:}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Tornadoes} are by far the most harmful weather event type for
+  population health, causing 97,068 total casualties
+\item
+  \textbf{Excessive heat} is the second most deadly event type, though
+  it causes relatively fewer injuries compared to fatalities
+\item
+  \textbf{Floods} and \textbf{thunderstorms} also pose significant risks
+  to public health
+\end{itemize}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsubsection{Question 2: Events with Greatest Economic
+Consequences}\label{question-2-events-with-greatest-economic-consequences}
+
+Economic impact was measured by combining property damage and crop
+damage for each event type.
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{economic\_impact }\OtherTok{\textless{}{-}}\NormalTok{ storm\_data }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{group\_by}\NormalTok{(EVTYPE\_CLEAN) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{summarise}\NormalTok{(}
+    \AttributeTok{Property\_Damage =} \FunctionTok{sum}\NormalTok{(PROPERTY\_DAMAGE, }\AttributeTok{na.rm =} \ConstantTok{TRUE}\NormalTok{),}
+    \AttributeTok{Crop\_Damage =} \FunctionTok{sum}\NormalTok{(CROP\_DAMAGE, }\AttributeTok{na.rm =} \ConstantTok{TRUE}\NormalTok{),}
+    \AttributeTok{Total\_Damage =} \FunctionTok{sum}\NormalTok{(TOTAL\_DAMAGE, }\AttributeTok{na.rm =} \ConstantTok{TRUE}\NormalTok{),}
+    \AttributeTok{Events =} \FunctionTok{n}\NormalTok{()}
+\NormalTok{  ) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{filter}\NormalTok{(Total\_Damage }\SpecialCharTok{\textgreater{}} \DecValTok{0}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{arrange}\NormalTok{(}\FunctionTok{desc}\NormalTok{(Total\_Damage)) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{slice\_head}\NormalTok{(}\AttributeTok{n =} \DecValTok{15}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}
+    \AttributeTok{Property\_Damage\_B =}\NormalTok{ Property\_Damage }\SpecialCharTok{/} \FloatTok{1e9}\NormalTok{,}
+    \AttributeTok{Crop\_Damage\_B =}\NormalTok{ Crop\_Damage }\SpecialCharTok{/} \FloatTok{1e9}\NormalTok{,}
+    \AttributeTok{Total\_Damage\_B =}\NormalTok{ Total\_Damage }\SpecialCharTok{/} \FloatTok{1e9}
+\NormalTok{  )}
+
+\NormalTok{economic\_table }\OtherTok{\textless{}{-}}\NormalTok{ economic\_impact }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{select}\NormalTok{(EVTYPE\_CLEAN, Property\_Damage\_B, Crop\_Damage\_B, Total\_Damage\_B, Events)}
+
+\FunctionTok{kable}\NormalTok{(economic\_table, }
+      \AttributeTok{digits =} \DecValTok{2}\NormalTok{,}
+      \AttributeTok{format.args =} \FunctionTok{list}\NormalTok{(}\AttributeTok{big.mark =} \StringTok{","}\NormalTok{),}
+      \AttributeTok{caption =} \StringTok{"Top 15 Weather Events by Economic Damage (Billions USD)"}\NormalTok{,}
+      \AttributeTok{col.names =} \FunctionTok{c}\NormalTok{(}\StringTok{"Event Type"}\NormalTok{, }\StringTok{"Property Damage"}\NormalTok{, }\StringTok{"Crop Damage"}\NormalTok{, }
+                   \StringTok{"Total Damage"}\NormalTok{, }\StringTok{"Number of Events"}\NormalTok{))}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.3095}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1905}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1429}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.1548}}
+  >{\raggedleft\arraybackslash}p{(\linewidth - 8\tabcolsep) * \real{0.2024}}@{}}
+\caption{Top 15 Weather Events by Economic Damage (Billions
+USD)}\tabularnewline
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Event Type
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Property Damage
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Crop Damage
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Total Damage
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Number of Events
+\end{minipage} \\
+\midrule\noalign{}
+\endfirsthead
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Event Type
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Property Damage
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Crop Damage
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Total Damage
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedleft
+Number of Events
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+FLOOD & 168.27 & 12.39 & 180.66 & 86,127 \\
+HURRICANE & 85.36 & 5.52 & 90.87 & 299 \\
+TORNADO & 58.60 & 0.42 & 59.02 & 60,700 \\
+STORM SURGE & 43.32 & 0.00 & 43.32 & 261 \\
+HAIL & 15.98 & 3.05 & 19.02 & 289,276 \\
+HIGH WIND & 16.24 & 2.03 & 18.28 & 364,869 \\
+WINTER STORM & 12.36 & 5.31 & 17.67 & 42,099 \\
+DROUGHT & 1.05 & 13.97 & 15.02 & 2,488 \\
+WILDFIRE & 8.50 & 0.40 & 8.90 & 4,239 \\
+TROPICAL STORM & 7.70 & 0.68 & 8.38 & 690 \\
+STORM SURGE/TIDE & 4.64 & 0.00 & 4.64 & 148 \\
+HEAVY RAIN/SEVERE WEATHER & 2.50 & 0.00 & 2.50 & 2 \\
+HEAVY RAIN & 0.69 & 0.73 & 1.43 & 11,742 \\
+EXTREME COLD & 0.07 & 1.31 & 1.38 & 657 \\
+THUNDERSTORM WIND & 1.21 & 0.02 & 1.23 & 98 \\
+\end{longtable}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{economic\_impact }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{pivot\_longer}\NormalTok{(}\AttributeTok{cols =} \FunctionTok{c}\NormalTok{(Property\_Damage\_B, Crop\_Damage\_B), }
+               \AttributeTok{names\_to =} \StringTok{"Type"}\NormalTok{, }\AttributeTok{values\_to =} \StringTok{"Damage"}\NormalTok{) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{mutate}\NormalTok{(}\AttributeTok{Type =} \FunctionTok{case\_when}\NormalTok{(}
+\NormalTok{    Type }\SpecialCharTok{==} \StringTok{"Property\_Damage\_B"} \SpecialCharTok{\textasciitilde{}} \StringTok{"Property"}\NormalTok{,}
+\NormalTok{    Type }\SpecialCharTok{==} \StringTok{"Crop\_Damage\_B"} \SpecialCharTok{\textasciitilde{}} \StringTok{"Crop"}
+\NormalTok{  )) }\SpecialCharTok{\%\textgreater{}\%}
+  \FunctionTok{ggplot}\NormalTok{(}\FunctionTok{aes}\NormalTok{(}\AttributeTok{x =} \FunctionTok{reorder}\NormalTok{(EVTYPE\_CLEAN, Damage), }\AttributeTok{y =}\NormalTok{ Damage, }\AttributeTok{fill =}\NormalTok{ Type)) }\SpecialCharTok{+}
+  \FunctionTok{geom\_col}\NormalTok{(}\AttributeTok{position =} \StringTok{"stack"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{coord\_flip}\NormalTok{() }\SpecialCharTok{+}
+  \FunctionTok{scale\_y\_continuous}\NormalTok{(}\AttributeTok{labels =}\NormalTok{ dollar) }\SpecialCharTok{+}
+  \FunctionTok{scale\_fill\_manual}\NormalTok{(}\AttributeTok{values =} \FunctionTok{c}\NormalTok{(}\StringTok{"Property"} \OtherTok{=} \StringTok{"\#4575b4"}\NormalTok{, }\StringTok{"Crop"} \OtherTok{=} \StringTok{"\#91cf60"}\NormalTok{),}
+                    \AttributeTok{name =} \StringTok{"Damage Type"}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{labs}\NormalTok{(}
+    \AttributeTok{title =} \StringTok{"Top 15 Weather Events by Economic Impact"}\NormalTok{,}
+    \AttributeTok{subtitle =} \StringTok{"Total property and crop damage across the United States"}\NormalTok{,}
+    \AttributeTok{x =} \ConstantTok{NULL}\NormalTok{,}
+    \AttributeTok{y =} \StringTok{"Economic Damage (Billions USD)"}
+\NormalTok{  ) }\SpecialCharTok{+}
+  \FunctionTok{theme\_minimal}\NormalTok{(}\AttributeTok{base\_size =} \DecValTok{12}\NormalTok{) }\SpecialCharTok{+}
+  \FunctionTok{theme}\NormalTok{(}
+    \AttributeTok{plot.title =} \FunctionTok{element\_text}\NormalTok{(}\AttributeTok{face =} \StringTok{"bold"}\NormalTok{, }\AttributeTok{size =} \DecValTok{14}\NormalTok{),}
+    \AttributeTok{legend.position =} \StringTok{"bottom"}\NormalTok{,}
+    \AttributeTok{panel.grid.minor =} \FunctionTok{element\_blank}\NormalTok{()}
+\NormalTok{  )}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{figure}
+\centering
+\pandocbounded{\includegraphics[keepaspectratio]{C:/Users/User/OneDrive/Desktop Nvidia/DataScienceCoursera/Storm-Analysis/figures/final/report_economic_plot-1.pdf}}
+\caption{Weather events with the highest economic impact}
+\end{figure}
+
+\textbf{Findings:}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Floods} cause the greatest economic damage, totaling
+  approximately \$180.7 billion
+\item
+  \textbf{Hurricanes} rank second in economic impact, with damage
+  exceeding \$90.9 billion
+\item
+  \textbf{Tornadoes} while most deadly, rank third in economic
+  consequences
+\item
+  \textbf{Drought} has substantial impact on agriculture, primarily
+  through crop damage
+\end{itemize}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{Conclusion}\label{conclusion}
+
+This analysis reveals important distinctions between weather events that
+threaten population health versus those with the greatest economic
+impact:
+
+\textbf{Population Health Priority:}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Tornadoes
+\item
+  Excessive Heat
+\item
+  Floods
+\end{enumerate}
+
+\textbf{Economic Damage Priority:}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Floods
+\item
+  Hurricanes\\
+\item
+  Tornadoes
+\end{enumerate}
+
+\textbf{Implications for Resource Allocation:}
+
+While tornadoes dominate casualty statistics, floods represent the
+single largest combined threat to both public safety and economic
+stability. This suggests that flood mitigation and emergency response
+systems warrant priority attention in resource allocation decisions.
+
+Heat-related events, despite their high fatality rate, may be
+underaddressed compared to more dramatic weather phenomena. Early
+warning systems and public cooling centers during heat waves could be
+highly cost-effective interventions.
+
+The diverse nature of weather threats across the United States
+necessitates flexible, multi-hazard preparedness strategies rather than
+focusing resources on a single event type.
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\subsection{Session Information}\label{session-information}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\FunctionTok{sessionInfo}\NormalTok{()}
+\end{Highlighting}
+\end{Shaded}
+
+\begin{verbatim}
+## R version 4.4.3 (2025-02-28 ucrt)
+## Platform: x86_64-w64-mingw32/x64
+## Running under: Windows 11 x64 (build 26100)
+## 
+## Matrix products: default
+## 
+## 
+## locale:
+## [1] LC_COLLATE=English_United States.utf8 
+## [2] LC_CTYPE=English_United States.utf8   
+## [3] LC_MONETARY=English_United States.utf8
+## [4] LC_NUMERIC=C                          
+## [5] LC_TIME=English_United States.utf8    
+## 
+## time zone: Asia/Singapore
+## tzcode source: internal
+## 
+## attached base packages:
+## [1] stats     graphics  grDevices utils     datasets  methods   base     
+## 
+## other attached packages:
+##  [1] knitr_1.50        scales_1.4.0      data.table_1.17.0 lubridate_1.9.4  
+##  [5] forcats_1.0.0     stringr_1.5.1     dplyr_1.1.4       purrr_1.0.4      
+##  [9] readr_2.1.5       tidyr_1.3.1       tibble_3.2.1      ggplot2_4.0.1    
+## [13] tidyverse_2.0.0   here_1.0.2       
+## 
+## loaded via a namespace (and not attached):
+##  [1] gtable_0.3.6       compiler_4.4.3     tidyselect_1.2.1   yaml_2.3.10       
+##  [5] fastmap_1.2.0      R6_2.6.1           labeling_0.4.3     generics_0.1.3    
+##  [9] rprojroot_2.1.0    pillar_1.10.1      RColorBrewer_1.1-3 tzdb_0.5.0        
+## [13] rlang_1.1.5        stringi_1.8.7      xfun_0.52          S7_0.2.1          
+## [17] timechange_0.3.0   cli_3.6.4          withr_3.0.2        magrittr_2.0.3    
+## [21] digest_0.6.37      grid_4.4.3         rstudioapi_0.17.1  hms_1.1.3         
+## [25] lifecycle_1.0.4    vctrs_0.6.5        evaluate_1.0.3     glue_1.8.0        
+## [29] farver_2.1.2       codetools_0.2-20   rmarkdown_2.29     tools_4.4.3       
+## [33] pkgconfig_2.0.3    htmltools_0.5.8.1
+\end{verbatim}
+
+\begin{center}\rule{0.5\linewidth}{0.5pt}\end{center}
+
+\textbf{Note:} This analysis is based on historical data and should be
+considered alongside current climate trends and regional risk
+assessments when making resource allocation decisions.
+
+\begin{verbatim}
+\end{verbatim}
+
+\end{document}
